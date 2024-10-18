@@ -1,122 +1,62 @@
-# Creational Design Patterns in Restaurant Order Management System
+# Creational Design Patterns  
+
+**Author**: Tabanschi Nichita  
+
+## Objectives:
+- Get familiar with Creational Design Patterns (CDPs).
+- Choose a specific domain.
+- Implement at least 3 CDPs for the chosen domain.
+
+## Domain Area:
+The domain chosen for this project is a **Restaurant Order Management System**. Customers can place dine-in or takeaway orders, and the system is responsible for managing and processing the orders, as well as generating reports (in text and HTML formats) for each order.
+
+## Used Design Patterns:
+- **Factory Method**: Used for creating different types of orders (e.g., Dine-In and Takeaway).
+- **Singleton**: Implemented for managing orders through a single `OrderManager` instance, ensuring there is only one point of control for order management.
+- **Builder**: Used to simplify the construction of complex meal objects (e.g., combo meals consisting of a main dish, drink, and dessert).
+
 ---
-**Author**: Tabanschi Nichita
----
-## Objective:
-The objective of this project is to demonstrate how creational design patterns (SRP and OCP) can be implemented in a Restaurant Order Management System using Python. The system takes user inputs for order details (items, quantities, prices) and generates reports in both text and HTML formats.
 
-## Design Patterns Implemented:
+## Implementation
 
-### 1. Single Responsibility Principle (SRP):
-- The `Order` class is responsible solely for storing order details (order ID, items, quantity, price). 
-- The `ReportGenerator` class is responsible for generating reports (in text or HTML formats). It does not handle cost calculations or data management.
+### **Design Pattern 1: Factory Method**
 
-### 2. Open/Closed Principle (OCP):
-- The `CostCalculator` class is open for extension but closed for modification. 
-- We have two different implementations:
-  1. **RegularCostCalculator**: Calculates total cost based on quantity and price.
-  2. **DiscountedCostCalculator**: Extends cost calculation with a discount logic.
+The **Factory Method** pattern is used to create different types of orders (Dine-In or Takeaway). A separate factory is responsible for creating the right kind of order object based on the type of order specified.
 
-## Implementation Snippets:
-
+#### Code:
 ```python
+# Concrete DineInOrderFactory
+class DineInOrderFactory(OrderFactory):
+    def __init__(self, table_number):
+        self.table_number = table_number
 
-# Abstract base class for CostCalculator (OCP implementation)
-from abc import ABC, abstractmethod
+    def create_order(self, order_id, customer_name):
+        return DineInOrder(order_id, customer_name, self.table_number)
 
-class CostCalculator(ABC):
-    @abstractmethod
-    def calculate_total(self, order):
-        pass
-
-class RegularCostCalculator(CostCalculator):
-    def calculate_total(self, order):
-        total = 0
-        for item in order.items:
-            total += item[1] * item[2]  # quantity * price_per_item
-        return total
-
-class DiscountedCostCalculator(CostCalculator):
-    def __init__(self, discount_percentage):
-        self.discount_percentage = discount_percentage
-
-    def calculate_total(self, order):
-        total = 0
-        for item in order.items:
-            total += item[1] * item[2]  # quantity * price_per_item
-        discount = total * self.discount_percentage / 100
-        return total - discount
+# Concrete TakeawayOrderFactory
+class TakeawayOrderFactory(OrderFactory):
+    def create_order(self, order_id, customer_name):
+        return TakeawayOrder(order_id, customer_name)
+     
+### **Design Pattern 2: Singleton**###
+The Singleton pattern ensures that there is only one OrderManager managing all orders throughout the program. This prevents multiple instances of the manager from being created.
 
 
-# Report generation (SRP implementation)
-class ReportGenerator(ABC):
-    @abstractmethod
-    def generate_report(self, order, total_cost):
-        pass
+class OrderManager:
+    _instance = None
 
-class TextReportGenerator(ReportGenerator):
-    def generate_report(self, order, total_cost):
-        report = f"Order ID: {order.order_id}\\n"
-        report += "Items:\\n"
-        for item in order.items:
-            report += f"{item[0]} - {item[1]} @ {item[2]} each\\n"
-        report += f"Total Cost: {total_cost}\\n"
-        return report
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(OrderManager, cls).__new__(cls)
+        return cls._instance
 
-class HTMLReportGenerator(ReportGenerator):
-    def generate_report(self, order, total_cost):
-        report = f"<h1>Order ID: {order.order_id}</h1>\\n"
-        report += "<ul>\\n"
-        for item in order.items:
-            report += f"<li>{item[0]} - {item[1]} @ {item[2]} each</li>\\n"
-        report += "</ul>\\n"
-        report += f"<p>Total Cost: {total_cost}</p>\\n"
-        return report
+    def __init__(self):
+        if not hasattr(self, 'orders'):
+            self.orders = []
 
-# Function to take order details from the user
-def get_order_details():
-    order_id = int(input("Enter order ID: "))
-    items = []
-    while True:
-        item_name = input("Enter item name (or 'done' to finish): ")
-        if item_name.lower() == 'done':
-            break
-        quantity = int(input(f"Enter quantity for {item_name}: "))
-        price = float(input(f"Enter price for {item_name}: "))
-        items.append((item_name, quantity, price))
-    return Order(order_id, items)
+    def add_order(self, order):
+        self.orders.append(order)
 
-```
-# Example Interaction:
-
-The system allows user input for order creation and applies cost calculation and report generation based on input.
-
-# Input:
-```
-Enter order ID: 1
-Enter item name (or 'done' to finish): Laptop
-Enter quantity for Laptop: 1
-Enter price for Laptop: 1200
-Enter item name (or 'done' to finish): Mouse
-Enter quantity for Mouse: 2
-Enter price for Mouse: 50
-Enter item name (or 'done' to finish): done
-```
-# Output:
-```
-Order ID: 1
-Items:
-Laptop - 1 @ 1200 each
-Mouse - 2 @ 50 each
-Total Cost: 1300.0
-
-<h1>Order ID: 1</h1>
-<ul>
-<li>Laptop - 1 @ 1200 each</li>
-<li>Mouse - 2 @ 50 each</li>
-</ul>
-<p>Total Cost: 1300.0</p>
-```
----
-# Conclusion:
-In this project, the principles of SOLID design were followed by implementing the SRP and OCP principles. The system's flexibility is achieved through different cost calculation strategies and report generation mechanisms, making it easy to extend functionality without modifying existing code.
+    def list_orders(self):
+        for order in self.orders:
+            print(order.order_type())
